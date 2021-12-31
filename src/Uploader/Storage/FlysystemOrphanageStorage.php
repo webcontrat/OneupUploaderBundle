@@ -9,7 +9,7 @@ use Oneup\UploaderBundle\Uploader\Chunk\Storage\FlysystemStorage as ChunkStorage
 use Oneup\UploaderBundle\Uploader\File\FileInterface;
 use Oneup\UploaderBundle\Uploader\File\FlysystemFile;
 use Symfony\Component\HttpFoundation\File\File as SymfonyFile;
-use Symfony\Component\HttpFoundation\Session\SessionInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 class FlysystemOrphanageStorage extends FlysystemStorage implements OrphanageStorageInterface
 {
@@ -18,10 +18,7 @@ class FlysystemOrphanageStorage extends FlysystemStorage implements OrphanageSto
      */
     protected $storage;
 
-    /**
-     * @var SessionInterface
-     */
-    protected $session;
+    protected RequestStack $requestStack;
 
     /**
      * @var ChunkStorage
@@ -38,7 +35,7 @@ class FlysystemOrphanageStorage extends FlysystemStorage implements OrphanageSto
      */
     protected $type;
 
-    public function __construct(StorageInterface $storage, SessionInterface $session, ChunkStorage $chunkStorage, array $config, string $type)
+    public function __construct(StorageInterface $storage, RequestStack $requestStack, ChunkStorage $chunkStorage, array $config, string $type)
     {
         /*
          * initiate the storage on the chunk storage's filesystem
@@ -48,7 +45,7 @@ class FlysystemOrphanageStorage extends FlysystemStorage implements OrphanageSto
 
         $this->storage = $storage;
         $this->chunkStorage = $chunkStorage;
-        $this->session = $session;
+        $this->requestStack = $requestStack;
         $this->config = $config;
         $this->type = $type;
     }
@@ -60,7 +57,7 @@ class FlysystemOrphanageStorage extends FlysystemStorage implements OrphanageSto
      */
     public function upload($file, string $name, string $path = null)
     {
-        if (!$this->session->isStarted()) {
+        if (!$this->requestStack->getSession()->isStarted()) {
             throw new \RuntimeException('You need a running session in order to run the Orphanage.');
         }
 
@@ -114,6 +111,6 @@ class FlysystemOrphanageStorage extends FlysystemStorage implements OrphanageSto
     {
         // the storage is initiated in the root of the filesystem, from where the orphanage directory
         // should be relative.
-        return sprintf('%s/%s/%s', $this->config['directory'], $this->session->getId(), $this->type);
+        return sprintf('%s/%s/%s', $this->config['directory'], $this->requestStack->getSession()->getId(), $this->type);
     }
 }
